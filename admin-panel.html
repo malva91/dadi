@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Taverna dei Cani di Odino</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Uncial+Antiqua&family=Norse+Bold&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v2.8">
+    <link rel="stylesheet" href="admin-style.css?v2.8">
+</head>
+
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="logo-container">
+                <div class="wolf-icon"><img src="logo.png" alt="logo" class="logo-small"></div>
+                <h1 class="title">⚙️ PANNELLO ADMIN</h1>
+            </div>
+            <a href="index.html" class="btn-back">← Torna alla Taverna</a>
+        </header>
+
+        <main class="admin-content">
+            <section class="admin-section">
+                <h2>🎲 Impostazioni Tiradadi</h2>
+                <p class="section-description">Controlla la visibilità del tiradadi nella schermata di gioco</p>
+
+                <div class="visibility-control">
+                    <label class="visibility-toggle">
+                        <input type="checkbox" id="diceRollerVisible" checked>
+                        <span>🎲 Tiradadi visibile ai giocatori (deseleziona per giocare solo con preset)</span>
+                    </label>
+                </div>
+            </section>
+
+
+            <section class="admin-section">
+                <h2>⚡ Gestione Preset</h2>
+                <p class="section-description">Crea preset di lancio rapido. I preset escludono automaticamente le
+                    regole normali e applicano solo quelle associate.</p>
+
+                <div class="presets-list">
+                    <div class="presets-header">
+                        <h3>📋 Preset Configurati</h3>
+                        <div class="header-controls"><select id="presetTagFilter" class="group-filter">
+                                <option value="all">Tutti i Tag</option>
+                            </select><button id="addPreset" class="btn-add">➕ Aggiungi Preset</button></div>
+                    </div>
+                    <div id="presetsList" class="presets-container">
+                        <!-- I preset saranno caricati dinamicamente -->
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="savePresets" class="btn-save">💾 Salva Preset</button>
+                </div>
+
+                <div id="presetSaveStatus" class="save-status"></div>
+            </section>
+
+
+            <section class="admin-section">
+                <h2>🎯 Configurazione Effetti Speciali</h2>
+                <p class="section-description">Configura manualmente le combinazioni di dadi e risultati che attivano
+                    effetti speciali</p>
+
+                <div class="effects-list">
+                    <div class="effects-header">
+                        <h3>📋 Regole Effetti Configurate</h3>
+                        <div class="header-controls">
+                            <select id="groupFilter" class="group-filter">
+                                <option value="all">Tutti i Gruppi</option>
+                            </select>
+                            <button id="addEffectRule" class="btn-add">➕ Aggiungi Regola</button>
+                        </div>
+                    </div>
+                    <div id="effectRulesList" class="rules-list">
+                        <!-- Le regole saranno caricate dinamicamente -->
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="saveEffects" class="btn-save">💾 Salva Configurazione</button>
+                    <button id="resetEffects" class="btn-reset">🔄 Ripristina Default</button>
+                </div>
+
+                <div id="saveStatus" class="save-status"></div>
+            </section>
+
+            <section class="admin-section">
+                <h2>🎨 Anteprima Effetti</h2>
+                <p class="section-description">Testa tutti gli effetti grafici e le varianti disponibili</p>
+
+                <div class="preview-grid">
+                    <!-- Anteprima effetti grafici -->
+                    <div class="preview-card">
+                        <h3>✨ Particelle e Fumo</h3>
+                        <div class="preview-buttons">
+                            <button class="btn-preview-effect" data-effect="particles-gold">⭐ Dorate</button>
+                            <button class="btn-preview-effect" data-effect="particles-rainbow">🌈 Arcobaleno</button>
+                            <button class="btn-preview-effect" data-effect="particles-fire">🔥 Fuoco</button>
+                            <button class="btn-preview-effect" data-effect="particles-ice">❄️ Ghiaccio</button>
+                            <button class="btn-preview-effect" data-effect="particles-green">💚 Verdi</button>
+                            <button class="btn-preview-effect" data-effect="particles-purple">💜 Viola</button>
+                            <button class="btn-preview-effect" data-effect="smoke-dark">⚫ Fumo Scuro</button>
+                            <button class="btn-preview-effect" data-effect="smoke-colored">🎨 Fumo Colorato</button>
+                            <button class="btn-preview-effect" data-effect="smoke-spiral">🌀 Fumo Spirale</button>
+                            <button class="btn-preview-effect" data-effect="smoke-explosion">💥 Esplosione</button>
+                        </div>
+                    </div>
+
+                    <div class="preview-card">
+                        <h3>💫 Bagliori</h3>
+                        <div class="preview-buttons">
+                            <button class="btn-preview-effect" data-effect="glow-gold">⭐ Dorato</button>
+                            <button class="btn-preview-effect" data-effect="glow-blue">🔵 Blu</button>
+                            <button class="btn-preview-effect" data-effect="glow-green">💚 Verde</button>
+                            <button class="btn-preview-effect" data-effect="glow-purple">💜 Viola</button>
+                            <button class="btn-preview-effect" data-effect="glow-rainbow">🌈 Arcobaleno</button>
+                            <button class="btn-preview-effect" data-effect="glow-red">🔴 Rosso</button>
+                            <button class="btn-preview-effect" data-effect="glow-red-pulse">❤️‍🔥 Rosso
+                                Pulsante</button>
+                            <button class="btn-preview-effect" data-effect="glow-intense">💥 Intenso</button>
+                        </div>
+                    </div>
+
+                    <div class="preview-card">
+                        <h3>🎪 Movimenti</h3>
+                        <div class="preview-buttons">
+                            <button class="btn-preview-effect" data-effect="bounce">🎾 Rimbalzo</button>
+                            <button class="btn-preview-effect" data-effect="bounce-high">🚀 Rimbalzo Alto</button>
+                            <button class="btn-preview-effect" data-effect="spin">🔄 Rotazione</button>
+                            <button class="btn-preview-effect" data-effect="spin-fast">⚡ Rotazione Veloce</button>
+                            <button class="btn-preview-effect" data-effect="scale-pulse">💓 Pulsazione</button>
+                            <button class="btn-preview-effect" data-effect="flip">🔃 Flip</button>
+                            <button class="btn-preview-effect" data-effect="shake">😰 Scossa</button>
+                            <button class="btn-preview-effect" data-effect="shake-hard">💀 Scossa Forte</button>
+                            <button class="btn-preview-effect" data-effect="wobble">🤢 Oscillazione</button>
+                        </div>
+                    </div>
+
+                    <!-- Area di test -->
+                    <div class="preview-card">
+                        <h3>🎯 Area Test</h3>
+                        <div id="testArea" class="test-area">
+                            <p>Clicca sugli effetti per vederli in azione!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js?v2.8"></script>
+    <script src="constants.js?v2.8"></script>
+    <script src="validation.js?v2.8"></script>
+    <script src="launch-types-registry.js?v2.8"></script>
+    <script src="color-types-registry.js?v2.8"></script>
+    <script src="particle-pool.js?v2.8"></script>
+    <script src="effects-engine.js?v2.8"></script>
+    <script src="admin-panel.js?v2.8"></script>
+
+</body>
+
+</html>

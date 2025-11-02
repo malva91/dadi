@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taverna dei Cani di Odino - Dice Roller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v2.8">
+</head>
+
+<body>
+    <!-- Schermata di Accesso -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="logo-container">
+                <div class="wolf-icon"><img src="logo.png" alt="logo" class="logo"></div>
+                <h1 class="title">TAVERNA DEI CANI DI ODINO</h1>
+                <div class="subtitle-container">
+                    <span class="rune">ᚱᚢᚾᛖ</span>
+                    <p class="subtitle">Dove i cani si riuniscono</p>
+                    <span class="rune">ᚱᚢᚾᛖ</span>
+                </div>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="input-group">
+                    <label for="playerName">🐺 Nome del Cane</label>
+                    <input type="text" id="playerName" placeholder="Fenrir, Geri, Freki..." required>
+                </div>
+
+                <div class="input-group">
+                    <label for="roomCode">🏛️ Codice della Taverna</label>
+                    <input type="text" id="roomCode" placeholder="ASGARD-001" required>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <span class="btn-icon">⚔️</span>
+                    <span>Entra nella Taverna</span>
+                    <span class="btn-icon">⚔️</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Schermata di Gioco -->
+    <div id="gameScreen" class="screen">
+        <!-- Header con nome stanza e utenti -->
+        <header class="game-header">
+            <div class="room-info">
+                <h1 class="room-title">
+                    <span class="tavern-icon">🏛️</span>
+                    <span id="currentRoom"></span>
+                    <span class="tavern-icon">🏛️</span>
+                </h1>
+                <div class="connected-users">
+                    <span class="users-label">🐺 Cani Connessi:</span>
+                    <div id="headerUsersList" class="users-badges"></div>
+                    <div class="version-indicator" style="font-size: 0.7rem; color: #a0a0a0; margin-top: 0.3rem;">v2.8</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="cleanupUsers" class="btn-cleanup" title="Rimuovi utenti disconnessi">
+                    <span>🧹</span>
+                    <span>Pulisci</span>
+                </button>
+                <button id="leaveRoom" class="btn-leave">
+                    <span>🚪</span>
+                    <span>Abbandona</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Layout a 3 colonne -->
+        <div class="game-layout">
+            <!-- Colonna 1: Controlli Dadi + Preset + Input Chat -->
+            <div class="column column-controls">
+                <!-- Controlli Dadi -->
+                <div class="dice-controls">
+                    <h3>🎲 Dadi del Destino</h3>
+
+                    <div class="dice-setup">
+                        <div class="dice-rows" id="diceRows">
+                            <!-- I dadi vengono creati dinamicamente -->
+                        </div>
+
+
+                        <div class="modifier-group">
+                            <label for="diceModifier">Bonus/Malus</label>
+                            <input type="number" id="diceModifier" value="0">
+                        </div>
+                        <div class="dice-actions">
+                            <button id="addDice" class="btn-secondary">
+                                <span>➕</span>
+                                <span>Aggiungi Dadi</span>
+                            </button>
+                            <button id="rollDice" class="btn-primary btn-roll">
+                                <span class="roll-icon">🎲</span>
+                                <span class="roll-text">LANCIA!</span>
+                                <span class="roll-icon">🎲</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preset -->
+                <div class="preset-section">
+                    <h3>⚡ Preset Veloci</h3>
+                    <div id="presetButtons" class="preset-buttons">
+                        <!-- I preset verranno caricati dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- Input Chat -->
+                <div class="chat-input-section">
+                    <h3>💬 Parla nella Taverna</h3>
+                    <div class="chat-input-container">
+                        <input type="text" id="chatInput" placeholder="Scrivi un messaggio ai tuoi compagni cani..."
+                            maxlength="200">
+                        <button id="sendMessage" class="btn-send">
+                            <span>📨</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonna 2: Risultati Dadi -->
+            <div class="column column-results">
+                <div class="results-section">
+                    <div class="section-header">
+                        <h3>⚔️ Risultati dei Dadi</h3>
+                        <button id="clearDiceResults" class="btn-clear" title="Pulisci risultati dadi">🗑️</button>
+                    </div>
+                    <div id="diceResults" class="dice-results-container"></div>
+                </div>
+            </div>
+
+            <!-- Colonna 3: Chat -->
+            <div class="column column-chat">
+                <div class="chat-section">
+                    <div class="section-header">
+                        <h3>🗣️ Chat della Taverna</h3>
+                        <button id="clearChat" class="btn-clear" title="Pulisci chat">🗑️</button>
+                    </div>
+                    <div id="chatMessages" class="chat-messages"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js?v2.8"></script>
+    <script src="constants.js?v2.8"></script>
+    <script src="random-utils.js?v2.8"></script>
+    <script src="launch-types-registry.js?v2.8"></script>
+    <script src="color-types-registry.js?v2.8"></script>
+    <script src="error-handler.js?v2.8"></script>
+    <script src="validation.js?v2.8"></script>
+    <script src="particle-pool.js?v2.8"></script>
+    <script src="storage-manager.js?v2.8"></script>
+    <script src="effects-engine.js??v2.8"></script>
+    <script src="animations.js?v2.8"></script>
+    <script src="room-service.js?v2.8"></script>
+    <script src="dice-service.js?v2.8"></script>
+    <script src="chat-service.js?v2.8"></script>
+    <script src="preset-manager.js?v2.8"></script>
+    <script src="ui-renderer.js?v2.8"></script>
+    <script src="main.js?v2.8"></script>
+</body>
+
+</html>
