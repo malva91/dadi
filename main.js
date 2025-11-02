@@ -45,6 +45,8 @@ class TavernaDeiCaniDiOdino {
 
         this.presetManager = new window.PresetManager(this.firestore);
 
+        this.extractionSystem = new window.ExtractionSystem(this.database);
+
         this.uiRenderer = new window.UIRenderer(
             this.validator,
             this.effectsEngine,
@@ -703,6 +705,10 @@ class TavernaDeiCaniDiOdino {
 
                 if (this.effectsEngine) {
                     this.effectsEngine.cleanup();
+                }
+
+                if (this.extractionSystem) {
+                    this.extractionSystem.cleanup();
                 }
 
                 sessionStorage.removeItem('tavernaPlayerName');
