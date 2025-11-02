@@ -37,6 +37,46 @@
                 </div>
             </section>
 
+            <section class="admin-section">
+                <h2>🎴 Sistema Estrazione</h2>
+                <p class="section-description">Configura il sistema di estrazione casuale senza reinserimento (tipo mazzo di carte)</p>
+
+                <div class="visibility-control">
+                    <label class="visibility-toggle">
+                        <input type="checkbox" id="extractionSystemVisible">
+                        <span>🎴 Sistema Estrazione visibile ai giocatori</span>
+                    </label>
+                </div>
+
+                <div class="extraction-config">
+                    <h3>Configurazione Mazzo</h3>
+                    <p class="section-description">Definisci gli elementi del mazzo. Ogni elemento verrà estratto una sola volta fino al reset.</p>
+
+                    <div class="deck-editor">
+                        <label for="deckElements">Elementi del Mazzo (uno per riga)</label>
+                        <textarea id="deckElements" rows="10" placeholder="1&#10;2&#10;3&#10;4&#10;5&#10;6&#10;7&#10;8&#10;9&#10;10"></textarea>
+                        <small>Esempio: numeri, carte, nomi, simboli, etc. Inserisci un elemento per riga.</small>
+                    </div>
+
+                    <div class="deck-preview">
+                        <h4>Anteprima Mazzo</h4>
+                        <div id="deckPreview" class="preview-items">
+                            <span class="preview-placeholder">Inserisci elementi per vedere l'anteprima</span>
+                        </div>
+                        <div class="deck-stats">
+                            <span>Totale elementi: <strong id="deckCount">0</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="saveExtractionConfig" class="btn-save">💾 Salva Configurazione</button>
+                    <button id="testExtraction" class="btn-preview">🎴 Test Estrazione</button>
+                </div>
+
+                <div id="extractionSaveStatus" class="save-status"></div>
+            </section>
+
 
             <section class="admin-section">
                 <h2>⚡ Gestione Preset</h2>

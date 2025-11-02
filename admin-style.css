@@ -1833,3 +1833,116 @@ select.dice-count-preset {
   filter: none !important;
   perspective: none !important;
 }
+
+/* Extraction System Admin Styles */
+.extraction-config {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.extraction-config h3 {
+    color: var(--ice-blue);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.deck-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.deck-editor label {
+    color: var(--ice-blue);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.deck-editor textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(10, 15, 25, 0.8);
+    color: var(--frost-white);
+    border: 2px solid var(--storm-gray);
+    border-radius: var(--radius);
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    resize: vertical;
+    min-height: 200px;
+    transition: all 0.3s ease;
+}
+
+.deck-editor textarea:focus {
+    outline: none;
+    border-color: var(--ice-blue);
+    box-shadow: 0 0 8px rgba(127, 179, 211, 0.3);
+    background: rgba(26, 35, 50, 1);
+}
+
+.deck-editor small {
+    color: var(--silver);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.deck-preview {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 2px solid var(--steel-blue);
+}
+
+.deck-preview h4 {
+    color: var(--ice-blue);
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.preview-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 60px;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+}
+
+.preview-placeholder {
+    color: var(--silver);
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.preview-item {
+    padding: 0.4rem 0.8rem;
+    background: linear-gradient(135deg, var(--steel-blue), var(--ice-blue));
+    color: var(--midnight-blue);
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.preview-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(94, 129, 172, 0.4);
+}
+
+.deck-stats {
+    padding: 0.5rem;
+    text-align: center;
+    color: var(--frost-white);
+    font-size: 0.9rem;
+}
+
+.deck-stats strong {
+    color: var(--ice-blue);
+    font-size: 1.1rem;
+}
