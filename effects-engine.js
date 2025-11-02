@@ -22,6 +22,21 @@ class EffectsEngine {
         }
     }
 
+    // Metodo helper per ordinare le regole
+    _sortRules(rules) {
+        return rules
+            .filter(r => r && r.enabled && (r.condition || r.diceCondition))
+            .sort((a, b) => {
+                // Prima ordina per presenza di FILTRA (con FILTRA vengono prima)
+                const aHasFilter = (a.condition || a.diceCondition || '').toUpperCase().includes('FILTRA');
+                const bHasFilter = (b.condition || b.diceCondition || '').toUpperCase().includes('FILTRA');
+                if (aHasFilter && !bHasFilter) return -1;
+                if (!aHasFilter && bHasFilter) return 1;
+                // Se entrambi hanno FILTRA o nessuno ce l'ha, ordina per priorità
+                return (a.priority || 999) - (b.priority || 999);
+            });
+    }
+
     async loadConfiguration(retryCount = 0) {
         const MAX_RETRIES = 3;
         const RETRY_DELAY = 2000;
@@ -43,17 +58,7 @@ class EffectsEngine {
                 }))
             });
 
-            this.rules = allRules
-                .filter(r => r && r.enabled && (r.condition || r.diceCondition))
-                .sort((a, b) => {
-                    // Prima ordina per presenza di FILTRA (con FILTRA vengono prima)
-                    const aHasFilter = (a.condition || a.diceCondition || '').toUpperCase().includes('FILTRA');
-                    const bHasFilter = (b.condition || b.diceCondition || '').toUpperCase().includes('FILTRA');
-                    if (aHasFilter && !bHasFilter) return -1;
-                    if (!aHasFilter && bHasFilter) return 1;
-                    // Se entrambi hanno FILTRA o nessuno ce l'ha, ordina per priorità
-                    return (a.priority || 999) - (b.priority || 999);
-                });
+            this.rules = this._sortRules(allRules);
 
             this.configLoaded = true;
             console.log('📊 CONFIGURAZIONE REGOLE CARICATA:');
@@ -68,17 +73,7 @@ class EffectsEngine {
                 try {
                     if (snap && snap.docs) {
                         const allRules = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                        this.rules = allRules
-                            .filter(r => r && r.enabled && (r.condition || r.diceCondition))
-                            .sort((a, b) => {
-                                // Prima ordina per presenza di FILTRA (con FILTRA vengono prima)
-                                const aHasFilter = (a.condition || a.diceCondition || '').toUpperCase().includes('FILTRA');
-                                const bHasFilter = (b.condition || b.diceCondition || '').toUpperCase().includes('FILTRA');
-                                if (aHasFilter && !bHasFilter) return -1;
-                                if (!aHasFilter && bHasFilter) return 1;
-                                // Se entrambi hanno FILTRA o nessuno ce l'ha, ordina per priorità
-                                return (a.priority || 999) - (b.priority || 999);
-                            });
+                        this.rules = this._sortRules(allRules);
                         this._log(`🔄 Regole aggiornate: ${this.rules.length} regole attive`, 'info', {
                             total: allRules.length,
                             enabled: allRules.filter(r => r.enabled).length
@@ -211,14 +206,8 @@ checkForEffects(diceArray, presetRules = null) {
             });
         });
 
-        // IMPORTANTE: Riordina le regole filtrate con lo stesso criterio (FILTRA prima)
-        activeRules.sort((a, b) => {
-            const aHasFilter = (a.condition || a.diceCondition || '').toUpperCase().includes('FILTRA');
-            const bHasFilter = (b.condition || b.diceCondition || '').toUpperCase().includes('FILTRA');
-            if (aHasFilter && !bHasFilter) return -1;
-            if (!aHasFilter && bHasFilter) return 1;
-            return (a.priority || 999) - (b.priority || 999);
-        });
+        // IMPORTANTE: Riordina le regole filtrate con lo stesso criterio
+        activeRules = this._sortRules(activeRules.map(r => ({ ...r, enabled: true })));
 
         this._log(`Regole attive trovate: ${activeRules.length}`, activeRules.length > 0 ? 'success' : 'warning');
 

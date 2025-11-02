@@ -237,6 +237,33 @@ class AdminPanel {
 
   /* ---------- UI wiring ---------- */
 
+  // Metodo helper per validare e sanitizzare ID
+  _validateAndSanitizeId(rawId, items, currentItem, inputElement, hintElement) {
+    const sanitizedId = rawId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+    if (rawId !== sanitizedId) inputElement.value = sanitizedId;
+
+    const currentIndex = items.findIndex(item => item === currentItem);
+    if (currentIndex !== -1) items[currentIndex].id = sanitizedId;
+    currentItem.id = sanitizedId;
+
+    if (items.filter(item => item.id === sanitizedId).length > 1) {
+      inputElement.style.borderColor = '#ff4444';
+      inputElement.title = 'ID duplicato!';
+      hintElement.textContent = '❌ ID duplicato!';
+      hintElement.style.color = '#ff4444';
+    } else if (!sanitizedId) {
+      inputElement.style.borderColor = '#ff4444';
+      inputElement.title = 'ID obbligatorio!';
+      hintElement.textContent = '⚠️ L\'ID è obbligatorio per salvare. Deve essere univoco.';
+      hintElement.style.color = '#ff9800';
+    } else {
+      inputElement.style.borderColor = '#4CAF50';
+      inputElement.title = 'ID valido';
+      hintElement.textContent = '✅ ID configurato correttamente';
+      hintElement.style.color = '#4CAF50';
+    }
+  }
+
   initializeElements() {
     this.saveButton = document.getElementById('saveEffects');
     this.resetButton = document.getElementById('resetEffects');
@@ -797,30 +824,7 @@ class AdminPanel {
     const idInput = card.querySelector('.rule-id');
     const idHint = card.querySelector('.rule-id-hint');
     const updateRuleId = () => {
-      const rawId = idInput.value.trim();
-      const sanitizedId = rawId.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-      if (rawId !== sanitizedId) idInput.value = sanitizedId;
-
-      const currentIndex = this.rules.findIndex(r => r === rule);
-      if (currentIndex !== -1) this.rules[currentIndex].id = sanitizedId;
-      rule.id = sanitizedId;
-
-      if (this.rules.filter(r => r.id === sanitizedId).length > 1) {
-        idInput.style.borderColor = '#ff4444';
-        idInput.title = 'ID duplicato!';
-        idHint.textContent = '❌ ID duplicato!';
-        idHint.style.color = '#ff4444';
-      } else if (!sanitizedId) {
-        idInput.style.borderColor = '#ff4444';
-        idInput.title = 'ID obbligatorio!';
-        idHint.textContent = '⚠️ L\'ID è obbligatorio per salvare. Deve essere univoco.';
-        idHint.style.color = '#ff9800';
-      } else {
-        idInput.style.borderColor = '#4CAF50';
-        idInput.title = 'ID valido';
-        idHint.textContent = '✅ ID configurato correttamente';
-        idHint.style.color = '#4CAF50';
-      }
+      this._validateAndSanitizeId(idInput.value, this.rules, rule, idInput, idHint);
     };
     idInput.addEventListener('input', updateRuleId);
     idInput.addEventListener('blur', updateRuleId);
@@ -1161,30 +1165,7 @@ class AdminPanel {
     const idInput = card.querySelector('.preset-id');
     const idHint = card.querySelector('.preset-id-hint');
     const updatePresetId = () => {
-      const rawId = idInput.value.trim();
-      const sanitizedId = rawId.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-      if (rawId !== sanitizedId) idInput.value = sanitizedId;
-
-      const currentIndex = this.presets.findIndex(p => p === preset);
-      if (currentIndex !== -1) this.presets[currentIndex].id = sanitizedId;
-      preset.id = sanitizedId;
-
-      if (this.presets.filter(p => p.id === sanitizedId).length > 1) {
-        idInput.style.borderColor = '#ff4444';
-        idInput.title = 'ID duplicato!';
-        idHint.textContent = '❌ ID duplicato!';
-        idHint.style.color = '#ff4444';
-      } else if (!sanitizedId) {
-        idInput.style.borderColor = '#ff4444';
-        idInput.title = 'ID obbligatorio!';
-        idHint.textContent = '⚠️ L\'ID è obbligatorio per salvare. Deve essere univoco.';
-        idHint.style.color = '#ff9800';
-      } else {
-        idInput.style.borderColor = '#4CAF50';
-        idInput.title = 'ID valido';
-        idHint.textContent = '✅ ID configurato correttamente';
-        idHint.style.color = '#4CAF50';
-      }
+      this._validateAndSanitizeId(idInput.value, this.presets, preset, idInput, idHint);
     };
     idInput.addEventListener('input', updatePresetId);
     idInput.addEventListener('blur', updatePresetId);
@@ -1245,8 +1226,6 @@ class AdminPanel {
   updatePresetDiceUI(card, preset) {
     const diceBuilder = card.querySelector('.dice-builder');
     if (!diceBuilder) return;
-    // Aggiorna i tipi se era vuoto (lazy)
-    this._refreshTypesIfEmpty();
 
     diceBuilder.innerHTML = preset.dice.map((d, i) => this.createDiceInputHTML(d, i)).join('');
     this.attachDiceInputListeners(card, preset);
@@ -1262,10 +1241,7 @@ class AdminPanel {
     };
 
     // ----- TIPI (lazy: ricalcola se cache non pronta) -----
-    if (!Array.isArray(this.classicVariants) || !this.classicVariants.length ||
-        !Array.isArray(this.specialTypes) || !this.specialTypes.length) {
-      this._refreshTypesIfEmpty();
-    }
+    this._refreshTypesIfEmpty();
     const classicOptions = (this.classicVariants || []).map(v => {
       const selected = (safeDice.type === String(v.value)) ? 'selected' : '';
       return `<option value="${v.value}" data-launch-type="dice" ${selected}>${v.label}</option>`;
