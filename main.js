@@ -61,6 +61,7 @@ class TavernaDeiCaniDiOdino {
         this.loadCustomDiceTypes();
         this.loadPresets();
         this.setupPresetCollapse();
+        this.initializeExtractionSystem();
 
         this.startCleanupInterval();
         this.storageManager.cleanupExpiredData();
@@ -86,6 +87,14 @@ class TavernaDeiCaniDiOdino {
         this.chatInput = document.getElementById('chatInput');
         this.sendMessageBtn = document.getElementById('sendMessage');
         this.presetButtons = document.getElementById('presetButtons');
+
+        this.extractionSection = document.getElementById('extractionSection');
+        this.extractCardBtn = document.getElementById('extractCard');
+        this.resetDeckBtn = document.getElementById('resetDeck');
+        this.extractionRemaining = document.getElementById('extractionRemaining');
+        this.extractionTotal = document.getElementById('extractionTotal');
+        this.extractionProgress = document.getElementById('extractionProgress');
+        this.extractionResult = document.getElementById('extractionResult');
     }
 
     bindEvents() {
@@ -146,6 +155,18 @@ class TavernaDeiCaniDiOdino {
             window.lastMouseY = e.clientY;
             window.lastMouseTime = performance.now();
         });
+
+        if (this.extractCardBtn) {
+            this.extractCardBtn.addEventListener('click', () => {
+                this.handleExtractCard();
+            });
+        }
+
+        if (this.resetDeckBtn) {
+            this.resetDeckBtn.addEventListener('click', () => {
+                this.handleResetDeck();
+            });
+        }
     }
 
     setupPresetCollapse() {
@@ -619,6 +640,81 @@ class TavernaDeiCaniDiOdino {
             if (this.diceService) {
                 this.diceService.setRolling(false);
             }
+        }
+    }
+
+    async initializeExtractionSystem() {
+        try {
+            const config = await this.extractionSystem.loadConfiguration();
+            this.updateExtractionVisibility(config.visible);
+            this.updateExtractionUI();
+        } catch (error) {
+            console.error('Errore inizializzazione sistema estrazione:', error);
+        }
+    }
+
+    updateExtractionVisibility(visible) {
+        if (this.extractionSection) {
+            this.extractionSection.style.display = visible ? 'block' : 'none';
+        }
+    }
+
+    updateExtractionUI() {
+        const state = this.extractionSystem.getCurrentState();
+
+        if (this.extractionRemaining) {
+            this.extractionRemaining.textContent = state.remaining;
+        }
+
+        if (this.extractionTotal) {
+            this.extractionTotal.textContent = state.totalCards;
+        }
+
+        if (this.extractionProgress) {
+            this.extractionProgress.style.width = `${state.progress}%`;
+        }
+
+        if (this.extractCardBtn) {
+            this.extractCardBtn.disabled = state.remaining === 0;
+        }
+    }
+
+    handleExtractCard() {
+        try {
+            const result = this.extractionSystem.extractCard();
+
+            if (this.extractionResult) {
+                this.extractionResult.innerHTML = `<div class="extracted-card">${result.value}</div>`;
+            }
+
+            this.updateExtractionUI();
+
+            if (result.remaining === 0) {
+                this.uiRenderer.showNotification('Mazzo esaurito. Usa Reset per ricominciare.', 'warning');
+            } else {
+                this.uiRenderer.showNotification(`Estratto: ${result.value}`, 'success');
+            }
+
+        } catch (error) {
+            this.uiRenderer.showNotification(error.message, 'error');
+            console.error('Errore estrazione carta:', error);
+        }
+    }
+
+    handleResetDeck() {
+        try {
+            const result = this.extractionSystem.resetDeck();
+
+            if (this.extractionResult) {
+                this.extractionResult.innerHTML = '<div class="result-placeholder">Clicca Estrai per pescare una carta</div>';
+            }
+
+            this.updateExtractionUI();
+            this.uiRenderer.showNotification(result.message, 'success');
+
+        } catch (error) {
+            this.uiRenderer.showNotification('Errore reset mazzo', 'error');
+            console.error('Errore reset mazzo:', error);
         }
     }
 

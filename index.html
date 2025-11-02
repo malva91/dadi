@@ -113,6 +113,39 @@
                     </div>
                 </div>
 
+                <!-- Sistema Estrazione -->
+                <div class="extraction-section" id="extractionSection" style="display: none;">
+                    <h3>🎴 Sistema Estrazione</h3>
+                    <div class="extraction-content">
+                        <div class="extraction-info">
+                            <div class="deck-stats">
+                                <span class="stat-label">Carte rimanenti:</span>
+                                <span class="stat-value" id="extractionRemaining">10</span>
+                                <span class="stat-separator">/</span>
+                                <span class="stat-total" id="extractionTotal">10</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="extractionProgress"></div>
+                            </div>
+                        </div>
+
+                        <div class="extraction-result" id="extractionResult">
+                            <div class="result-placeholder">Clicca Estrai per pescare una carta</div>
+                        </div>
+
+                        <div class="extraction-actions">
+                            <button id="extractCard" class="btn-extract">
+                                <span>🎴</span>
+                                <span>Estrai</span>
+                            </button>
+                            <button id="resetDeck" class="btn-reset-deck">
+                                <span>🔄</span>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Input Chat -->
                 <div class="chat-input-section">
                     <h3>💬 Parla nella Taverna</h3>
