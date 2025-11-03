@@ -25,35 +25,90 @@
         </header>
 
         <main class="admin-content">
-            <!-- Impostazioni Tiradadi -->
-            <section class="admin-section">
-                <h2>🎲 Impostazioni Tiradadi</h2>
-                <p class="section-description">Controlla la visibilità del tiradadi nella schermata di gioco</p>
+            <!-- Legenda Generale -->
+            <section class="admin-section legend-section">
+                <h2>📚 Guida Rapida</h2>
+                <div class="legend-grid">
+                    <div class="legend-card">
+                        <div class="legend-icon">🎲</div>
+                        <h3>Tiradadi</h3>
+                        <p>Controlla la visibilità del pannello di lancio dadi nella schermata principale. Se disabilitato, i giocatori possono usare solo i preset configurati.</p>
+                    </div>
+                    <div class="legend-card">
+                        <div class="legend-icon">🎴</div>
+                        <h3>Sistema Estrazione</h3>
+                        <p>Crea un mazzo di carte virtuale con elementi personalizzati. Ogni elemento viene estratto una sola volta fino al reset del mazzo.</p>
+                    </div>
+                    <div class="legend-card">
+                        <div class="legend-icon">⚡</div>
+                        <h3>Preset</h3>
+                        <p>Lanci rapidi preconfigurati con dadi specifici e regole associate. Ideali per azioni ricorrenti come attacchi o incantesimi.</p>
+                    </div>
+                    <div class="legend-card">
+                        <div class="legend-icon">🎯</div>
+                        <h3>Effetti Speciali</h3>
+                        <p>Definisci condizioni sui risultati dei dadi che attivano effetti visivi, suoni e testo personalizzato. Usa le priorità per gestire regole multiple.</p>
+                    </div>
+                    <div class="legend-card">
+                        <div class="legend-icon">🎨</div>
+                        <h3>Anteprima Effetti</h3>
+                        <p>Testa tutti gli effetti grafici disponibili (particelle, bagliori, movimenti) in un'area di prova dedicata.</p>
+                    </div>
+                    <div class="legend-card">
+                        <div class="legend-icon">💡</div>
+                        <h3>Sintassi Condizioni</h3>
+                        <p><strong>D20=20</strong> un D20 che vale 20<br>
+                        <strong>D6=1 + D6=1</strong> due D6 che valgono 1<br>
+                        <strong>2D6=ALTO</strong> i 2 valori più alti tra i D6<br>
+                        <strong>FILTRA</strong> considera solo i dadi che rispettano la condizione</p>
+                    </div>
+                </div>
+            </section>
 
-                <div class="visibility-control">
+            <!-- Impostazioni Visibilità -->
+            <section class="admin-section category-section">
+                <div class="section-category-header">
+                    <span class="category-badge visibility-badge">Visibilità</span>
+                    <h2>⚙️ Impostazioni di Base</h2>
+                </div>
+                <p class="section-description">Configura cosa possono vedere e usare i giocatori</p>
+
+                <div class="settings-grid">
+                    <!-- Impostazioni Tiradadi -->
+                    <div class="setting-card">
+                        <h3>🎲 Tiradadi</h3>
+                        <div class="visibility-control">
                     <label class="visibility-toggle">
                         <input type="checkbox" id="diceRollerVisible" checked>
                         <span>🎲 Tiradadi visibile ai giocatori (deseleziona per giocare solo con preset)</span>
                     </label>
+                        </div>
+                    </div>
+
+                    <!-- Visibilità Sistema Estrazione -->
+                    <div class="setting-card">
+                        <h3>🎴 Sistema Estrazione</h3>
+                        <div class="visibility-control">
+                            <label class="visibility-toggle">
+                                <input type="checkbox" id="extractionSystemVisible">
+                                <span>🎴 Sistema Estrazione visibile ai giocatori</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Sistema Estrazione con FASE 3 -->
-            <section class="admin-section">
-                <h2>🎴 Sistema Estrazione</h2>
-                <p class="section-description">Configura il sistema di estrazione casuale senza reinserimento (tipo mazzo di carte)</p>
+            <section class="admin-section category-section">
+                <div class="section-category-header">
+                    <span class="category-badge extraction-badge">Estrazione</span>
+                    <h2>🎴 Configurazione Sistema Estrazione</h2>
+                </div>
+                <p class="section-description">Crea un mazzo virtuale con elementi personalizzati. Ogni elemento verrà estratto una sola volta fino al reset.</p>
 
                 <!-- FASE 3: Indicatore Stato Test -->
                 <div id="testStateIndicator" class="test-state-indicator">
                     <span class="test-state-idle">⚪ Nessun test eseguito</span>
-                </div>
-
-                <!-- Visibilità Sistema -->
-                <div class="visibility-control">
-                    <label class="visibility-toggle">
-                        <input type="checkbox" id="extractionSystemVisible">
-                        <span>🎴 Sistema Estrazione visibile ai giocatori</span>
-                    </label>
                 </div>
 
                 <!-- Configurazione Mazzo -->
@@ -102,10 +157,12 @@
             </section>
 
             <!-- Gestione Preset -->
-            <section class="admin-section">
-                <h2>⚡ Gestione Preset</h2>
-                <p class="section-description">Crea preset di lancio rapido. I preset escludono automaticamente le
-                    regole normali e applicano solo quelle associate.</p>
+            <section class="admin-section category-section">
+                <div class="section-category-header">
+                    <span class="category-badge preset-badge">Preset</span>
+                    <h2>⚡ Gestione Preset</h2>
+                </div>
+                <p class="section-description">Crea lanci rapidi preconfigurati con dadi specifici, modificatori e regole personalizzate. Perfetto per azioni ricorrenti.</p>
 
                 <div class="presets-list">
                     <div class="presets-header">
@@ -130,10 +187,12 @@
             </section>
 
             <!-- Configurazione Effetti Speciali -->
-            <section class="admin-section">
-                <h2>🎯 Configurazione Effetti Speciali</h2>
-                <p class="section-description">Configura manualmente le combinazioni di dadi e risultati che attivano
-                    effetti speciali</p>
+            <section class="admin-section category-section">
+                <div class="section-category-header">
+                    <span class="category-badge effects-badge">Effetti</span>
+                    <h2>🎯 Configurazione Effetti Speciali</h2>
+                </div>
+                <p class="section-description">Definisci condizioni sui risultati dei dadi che attivano effetti visivi, audio e testo personalizzato. Usa le priorità per gestire regole multiple.</p>
 
                 <div class="effects-list">
                     <div class="effects-header">
@@ -159,9 +218,12 @@
             </section>
 
             <!-- Anteprima Effetti -->
-            <section class="admin-section">
-                <h2>🎨 Anteprima Effetti</h2>
-                <p class="section-description">Testa tutti gli effetti grafici e le varianti disponibili</p>
+            <section class="admin-section category-section">
+                <div class="section-category-header">
+                    <span class="category-badge preview-badge">Anteprima</span>
+                    <h2>🎨 Anteprima Effetti</h2>
+                </div>
+                <p class="section-description">Testa tutti gli effetti grafici disponibili in tempo reale. Clicca su un effetto per vederlo applicato nell'area di test.</p>
 
                 <div class="preview-grid">
                     <!-- Particelle e Fumo -->
