@@ -207,7 +207,10 @@ class UIRenderer {
 
                 const colorEmoji = this.getColorEmoji(dice.color);
 
-            if (dice.type === 'custom') {
+            if (dice.type === 'extraction') {
+                const diceEmoji = dice.emoji || '🎴';
+                content += `${diceEmoji} ${dice.displayName || 'Estrazione'} = <strong style="color: #FFD700; font-size: 1.3em;">${dice.value}</strong><br>`;
+            } else if (dice.type === 'custom') {
                 const diceEmoji = dice.emoji || '';
                 content += `${colorEmoji}${diceEmoji ? diceEmoji + ' ' : ''}${dice.displayName} = <strong>${dice.value}</strong><br>`;
             } else if (dice.type === 'array') {
@@ -279,15 +282,17 @@ class UIRenderer {
             });
         }
 
-        const numericResults = Array.isArray(result.results) ?
-            result.results.filter(dice => dice && dice.type === 'numeric') : [];
-        if (numericResults.length > 0) {
-            const total = numericResults.reduce((sum, dice) => sum + (dice.value || 0), 0);
-            const modifierInput = document.getElementById('diceModifier');
-            const modifier = modifierInput ? (parseInt(modifierInput.value) || 0) : 0;
-            const totalWithMod = total + modifier;
-            const modSign = modifier >= 0 ? '+' + modifier : modifier;
-            content += `<div class="total">Totale = ${total}${modSign} = <strong>${totalWithMod}</strong></div>`;
+        if (!result.isExtraction) {
+            const numericResults = Array.isArray(result.results) ?
+                result.results.filter(dice => dice && dice.type === 'numeric') : [];
+            if (numericResults.length > 0) {
+                const total = numericResults.reduce((sum, dice) => sum + (dice.value || 0), 0);
+                const modifierInput = document.getElementById('diceModifier');
+                const modifier = modifierInput ? (parseInt(modifierInput.value) || 0) : 0;
+                const totalWithMod = total + modifier;
+                const modSign = modifier >= 0 ? '+' + modifier : modifier;
+                content += `<div class="total">Totale = ${total}${modSign} = <strong>${totalWithMod}</strong></div>`;
+            }
         }
 
         resultDiv.innerHTML = content;

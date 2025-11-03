@@ -9,6 +9,9 @@ class ExtractionSystem {
         this.originalDeck = null;
         this.lastExtraction = null;
         this.unsubscribe = null;
+        this.deckStateRef = null;
+        this.deckListener = null;
+        this.currentRoomCode = null;
 
         this.loadConfiguration();
     }
@@ -66,33 +69,71 @@ class ExtractionSystem {
         return ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
     }
 
-    extractCard() {
-        if (!this.currentDeck || this.currentDeck.length === 0) {
-            throw new Error('Mazzo vuoto! Usa il pulsante Reset per ricominciare.');
+    async extractCard(currentUser) {
+        if (!this.deckStateRef) {
+            throw new Error('Sistema estrazione non inizializzato per questa stanza');
         }
 
-        const randomIndex = Math.floor(Math.random() * this.currentDeck.length);
-        const extractedCard = this.currentDeck[randomIndex];
+        if (!currentUser || !currentUser.id || !currentUser.name) {
+            throw new Error('Utente non valido');
+        }
 
-        this.currentDeck.splice(randomIndex, 1);
-        this.lastExtraction = extractedCard;
+        try {
+            const snapshot = await this.deckStateRef.once('value');
+            const deckState = snapshot.val();
 
-        return {
-            value: extractedCard,
-            remaining: this.currentDeck.length,
-            totalCards: this.originalDeck.length
-        };
+            if (!deckState || !deckState.currentDeck || deckState.currentDeck.length === 0) {
+                throw new Error('Mazzo vuoto! Usa il pulsante Reset per ricominciare.');
+            }
+
+            const currentDeck = deckState.currentDeck;
+            const randomIndex = Math.floor(Math.random() * currentDeck.length);
+            const extractedCard = currentDeck[randomIndex];
+
+            const newDeck = [...currentDeck];
+            newDeck.splice(randomIndex, 1);
+
+            await this.deckStateRef.update({
+                currentDeck: newDeck,
+                lastExtraction: extractedCard,
+                lastExtractedBy: currentUser.name,
+                lastExtractedAt: Date.now()
+            });
+
+            return {
+                value: extractedCard,
+                remaining: newDeck.length,
+                totalCards: deckState.totalCards || this.originalDeck.length
+            };
+        } catch (error) {
+            console.error('Errore estrazione carta:', error);
+            throw error;
+        }
     }
 
-    resetDeck() {
-        this.currentDeck = [...this.originalDeck];
-        this.lastExtraction = null;
+    async resetDeck() {
+        if (!this.deckStateRef) {
+            throw new Error('Sistema estrazione non inizializzato per questa stanza');
+        }
 
-        return {
-            remaining: this.currentDeck.length,
-            totalCards: this.originalDeck.length,
-            message: 'Mazzo resettato!'
-        };
+        try {
+            await this.deckStateRef.set({
+                currentDeck: [...this.originalDeck],
+                totalCards: this.originalDeck.length,
+                lastExtraction: null,
+                lastExtractedBy: null,
+                lastExtractedAt: null
+            });
+
+            return {
+                remaining: this.originalDeck.length,
+                totalCards: this.originalDeck.length,
+                message: 'Mazzo resettato!'
+            };
+        } catch (error) {
+            console.error('Errore reset mazzo:', error);
+            throw error;
+        }
     }
 
     async setVisible(visible) {
@@ -150,6 +191,18 @@ class ExtractionSystem {
     }
 
     getCurrentState() {
+        if (!this.currentDeck) {
+            return {
+                isVisible: this.isVisible,
+                isEnabled: this.isEnabled,
+                currentCards: [],
+                remaining: 0,
+                totalCards: 0,
+                lastExtraction: null,
+                progress: 0
+            };
+        }
+
         return {
             isVisible: this.isVisible,
             isEnabled: this.isEnabled,
@@ -163,6 +216,63 @@ class ExtractionSystem {
         };
     }
 
+    async setupRoomDeck(roomCode) {
+        if (!roomCode || !this.database) {
+            console.error('setupRoomDeck: parametri non validi');
+            return;
+        }
+
+        this.currentRoomCode = roomCode;
+        this.deckStateRef = this.database.ref(`rooms/${roomCode}/extractionState`);
+
+        try {
+            const snapshot = await this.deckStateRef.once('value');
+            const deckState = snapshot.val();
+
+            if (!deckState || !deckState.currentDeck) {
+                await this.deckStateRef.set({
+                    currentDeck: [...this.originalDeck],
+                    totalCards: this.originalDeck.length,
+                    lastExtraction: null,
+                    lastExtractedBy: null,
+                    lastExtractedAt: null
+                });
+                this.currentDeck = [...this.originalDeck];
+            } else {
+                this.currentDeck = deckState.currentDeck || [];
+            }
+
+            this.setupDeckListener();
+        } catch (error) {
+            console.error('Errore setup room deck:', error);
+            this.currentDeck = [...this.originalDeck];
+        }
+    }
+
+    setupDeckListener() {
+        if (!this.deckStateRef) return;
+
+        if (this.deckListener) {
+            this.deckStateRef.off('value', this.deckListener);
+        }
+
+        this.deckListener = this.deckStateRef.on('value', (snapshot) => {
+            try {
+                const deckState = snapshot.val();
+                if (!deckState) return;
+
+                this.currentDeck = deckState.currentDeck || [];
+                this.lastExtraction = deckState.lastExtraction || null;
+
+                if (window.app && typeof window.app.updateExtractionUI === 'function') {
+                    window.app.updateExtractionUI();
+                }
+            } catch (error) {
+                console.error('Errore listener deck:', error);
+            }
+        });
+    }
+
     cleanup() {
         if (this.unsubscribe) {
             try {
@@ -172,6 +282,18 @@ class ExtractionSystem {
             }
             this.unsubscribe = null;
         }
+
+        if (this.deckStateRef && this.deckListener) {
+            try {
+                this.deckStateRef.off('value', this.deckListener);
+            } catch (error) {
+                console.warn('Errore rimozione listener deck:', error);
+            }
+            this.deckListener = null;
+        }
+
+        this.deckStateRef = null;
+        this.currentRoomCode = null;
     }
 }
 

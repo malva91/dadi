@@ -409,6 +409,8 @@ class TavernaDeiCaniDiOdino {
 
             this.chatService.setupChatRef(roomRef);
 
+            await this.extractionSystem.setupRoomDeck(result.roomCode);
+
             this.setupFirebaseListeners();
             this.updateDiceRollerVisibilityUI();
             this.showGameScreen();
@@ -679,15 +681,38 @@ class TavernaDeiCaniDiOdino {
         }
     }
 
-    handleExtractCard() {
+    async handleExtractCard() {
         try {
-            const result = this.extractionSystem.extractCard();
+            const currentUser = this.roomService.getCurrentUser();
+            if (!currentUser) {
+                this.uiRenderer.showNotification('Utente non valido', 'error');
+                return;
+            }
+
+            const result = await this.extractionSystem.extractCard(currentUser);
 
             if (this.extractionResult) {
                 this.extractionResult.innerHTML = `<div class="extracted-card">${result.value}</div>`;
             }
 
-            this.updateExtractionUI();
+            const extractionResult = {
+                playerName: currentUser.name,
+                playerId: currentUser.id,
+                results: [{
+                    type: 'extraction',
+                    value: result.value,
+                    displayName: 'Estrazione',
+                    emoji: '🎴'
+                }],
+                timestamp: Date.now(),
+                localTimestamp: Date.now(),
+                color: currentUser.color,
+                isExtraction: true
+            };
+
+            if (this.diceResultsRef) {
+                await this.diceResultsRef.push(extractionResult);
+            }
 
             if (result.remaining === 0) {
                 this.uiRenderer.showNotification('Mazzo esaurito. Usa Reset per ricominciare.', 'warning');
@@ -701,9 +726,9 @@ class TavernaDeiCaniDiOdino {
         }
     }
 
-    handleResetDeck() {
+    async handleResetDeck() {
         try {
-            const result = this.extractionSystem.resetDeck();
+            const result = await this.extractionSystem.resetDeck();
 
             if (this.extractionResult) {
                 this.extractionResult.innerHTML = '<div class="result-placeholder">Clicca Estrai per pescare una carta</div>';
@@ -871,6 +896,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const app = new TavernaDeiCaniDiOdino();
+    window.app = app;
 
     const savedPlayerName = sessionStorage.getItem('tavernaPlayerName');
     const savedRoomCode = sessionStorage.getItem('tavernaRoomCode');
