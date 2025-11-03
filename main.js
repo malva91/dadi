@@ -45,7 +45,7 @@ class TavernaDeiCaniDiOdino {
 
         this.presetManager = new window.PresetManager(this.firestore);
 
-        this.extractionSystem = new window.ExtractionSystem(this.database);
+        this.extractionSystem = new window.ExtractionSystem(this.database, this.firestore);
 
         this.uiRenderer = new window.UIRenderer(
             this.validator,
