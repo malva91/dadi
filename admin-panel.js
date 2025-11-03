@@ -112,6 +112,11 @@ class AdminPanel {
     // NON cachiamo i colori in modo rigido: li leggiamo lazy quando servono
     this.rules = [];
     this.presets = [];
+    // FASE 3: Test & Validazione
+    this.testResults = null;
+    this.testState = 'idle'; // idle | testing | success | warning | error
+    this.testLogs = [];
+
 
     this._injectAntiClippingCSS();
     this.initializeElements();
@@ -278,6 +283,21 @@ class AdminPanel {
     this.presetsList = document.getElementById('presetsList');
     this.savePresetsButton = document.getElementById('savePresets');
     this.presetSaveStatus = document.getElementById('presetSaveStatus');
+  
+    // FASE 3: Elementi di test
+    this.testExtractionButton = document.getElementById('testExtraction');
+    this.runMultipleTestsButton = document.getElementById('runMultipleTests');
+    this.testResultsContainer = document.getElementById('testResults');
+    this.testLogsContainer = document.getElementById('testLogs');
+    this.testStateIndicator = document.getElementById('testStateIndicator');
+
+    // Elementi UI sistema estrazione (se presenti in pagina)
+    this.extractionSystemVisibleCheckbox = document.getElementById('extractionSystemVisible');
+    this.deckElements = document.getElementById('deckElements');
+    this.deckPreview = document.getElementById('deckPreview');
+    this.deckCount = document.getElementById('deckCount');
+    this.extractionSaveStatus = document.getElementById('extractionSaveStatus');
+
   }
 
   _log(message, type = 'info', data = null) {
@@ -294,7 +314,18 @@ class AdminPanel {
         this.diceRollerVisible = e.target.checked;
         this.showStatus(this.diceRollerVisible ? '✅ Tiradadi visibile' : '🔒 Tiradadi nascosto', 'success');
         await this.saveDiceRollerVisibility();
-      });
+      
+    // FASE 3: Eventi di test
+    this.testExtractionButton?.addEventListener('click', () => this.runDryRunTest());
+    this.runMultipleTestsButton?.addEventListener('click', () => this.runMultipleTests());
+
+    // Validazione live durante la digitazione
+    this.deckElements?.addEventListener('input', () => {
+      this.updateExtractionPreview();
+      this.validateInputLive();
+    });
+
+  });
     }
 
     this.groupFilter?.addEventListener('change', () => this.renderRules());
@@ -1471,6 +1502,531 @@ class AdminPanel {
       await this.savePresetToFirestore(preset);
     }
   }
+
+  
+  // ========== VALIDAZIONI INPUT ==========
+
+  validateInputLive() {
+    if (!this.deckElements || !this.deckPreview) return;
+
+    const text = this.deckElements.value || '';
+    const elements = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    const duplicates = this.findDuplicates(elements);
+    const emptyLines = this.findEmptyLines(text);
+    const invalidLines = this.findInvalidLines(elements);
+
+    this.highlightErrors(duplicates, emptyLines, invalidLines);
+    this.showValidationFeedback(elements, duplicates, emptyLines, invalidLines);
+  }
+
+  findDuplicates(elements) {
+    const seen = new Map();
+    const duplicates = [];
+    elements.forEach((element, index) => {
+      const normalized = element.toLowerCase();
+      if (seen.has(normalized)) {
+        duplicates.push({
+          line: index + 1,
+          value: element,
+          firstOccurrence: seen.get(normalized) + 1
+        });
+      } else {
+        seen.set(normalized, index);
+      }
+    });
+    return duplicates;
+  }
+
+  findEmptyLines(text) {
+    const lines = text.split('\n');
+    const emptyLines = [];
+    lines.forEach((line, index) => {
+      if (line.trim().length === 0 && line.length > 0) {
+        emptyLines.push(index + 1);
+      }
+    });
+    return emptyLines;
+  }
+
+  findInvalidLines(elements) {
+    const invalidLines = [];
+    const MAX_LENGTH = 200;
+    elements.forEach((element, index) => {
+      if (element.length > MAX_LENGTH) {
+        invalidLines.push({
+          line: index + 1,
+          value: element,
+          reason: `Troppo lungo (${element.length}/${MAX_LENGTH} caratteri)`
+        });
+      }
+    });
+    return invalidLines;
+  }
+
+  highlightErrors(duplicates, emptyLines, invalidLines) {
+    if (!this.deckPreview || !this.deckElements) return;
+
+    const text = this.deckElements.value || '';
+    const elements = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    if (elements.length === 0) {
+      this.deckPreview.innerHTML = '<span class="preview-placeholder">Inserisci elementi per vedere l\'anteprima</span>';
+      return;
+    }
+
+    const errorLines = new Set();
+    const warningLines = new Set();
+    duplicates.forEach(d => errorLines.add(d.line - 1));
+    invalidLines.forEach(i => errorLines.add(i.line - 1));
+    emptyLines.forEach(l => warningLines.add(l - 1));
+
+    this.deckPreview.innerHTML = elements
+      .map((element, index) => {
+        const isError = errorLines.has(index);
+        const isWarning = warningLines.has(index);
+        const className = isError ? 'preview-item-error' : isWarning ? 'preview-item-warning' : 'preview-item';
+        const icon = isError ? '🔴' : isWarning ? '🟠' : '';
+        return `<span class="${className}">${icon} ${this.escapeHtml(element)}</span>`;
+      })
+      .join('');
+  }
+
+  showValidationFeedback(elements, duplicates, emptyLines, invalidLines) {
+    const MAX_ELEMENTS = 1000;
+    const messages = [];
+
+    if (elements.length > MAX_ELEMENTS) {
+      messages.push({
+        type: 'error',
+        text: `🔴 ERRORE: Troppi elementi (${elements.length}/${MAX_ELEMENTS}). Rimuovi ${elements.length - MAX_ELEMENTS} elementi.`
+      });
+    }
+
+    if (duplicates.length > 0) {
+      const dupsText = duplicates.slice(0, 3).map(d =>
+        `Riga ${d.line}: "${d.value}" (duplicato della riga ${d.firstOccurrence})`
+      ).join(', ');
+      const more = duplicates.length > 3 ? ` e altri ${duplicates.length - 3} duplicati` : '';
+      messages.push({ type: 'error', text: `🔴 DUPLICATI: ${dupsText}${more}` });
+    }
+
+    if (invalidLines.length > 0) {
+      const invText = invalidLines.slice(0, 2).map(i =>
+        `Riga ${i.line}: ${i.reason}`
+      ).join(', ');
+      const more = invalidLines.length > 2 ? ` e altri ${invalidLines.length - 2} errori` : '';
+      messages.push({ type: 'error', text: `🔴 ERRORI: ${invText}${more}` });
+    }
+
+    if (emptyLines.length > 0 && emptyLines.length < 5) {
+      messages.push({ type: 'warning', text: `🟠 Righe vuote: ${emptyLines.join(', ')}` });
+    }
+
+    this.showValidationMessages(messages);
+  }
+
+  showValidationMessages(messages) {
+    if (!this.extractionSaveStatus) return;
+    if (messages.length === 0) {
+      this.extractionSaveStatus.textContent = '';
+      this.extractionSaveStatus.className = 'save-status';
+      return;
+    }
+    const errorMessages = messages.filter(m => m.type === 'error');
+    const warningMessages = messages.filter(m => m.type === 'warning');
+    if (errorMessages.length > 0) {
+      this.extractionSaveStatus.textContent = errorMessages[0].text;
+      this.extractionSaveStatus.className = 'save-status error';
+    } else if (warningMessages.length > 0) {
+      this.extractionSaveStatus.textContent = warningMessages[0].text;
+      this.extractionSaveStatus.className = 'save-status warning';
+    }
+  }
+
+  // ========== DRY-RUN TEST ESTRAZIONE ==========
+
+  async runDryRunTest() {
+    console.log('🧪 [FASE 3] Avvio Dry-Run Test Estrazione');
+    console.time('⏱️ Dry-Run Test');
+
+    this.testState = 'testing';
+    this.updateTestStateUI();
+
+    const startTime = performance.now();
+    const testLog = {
+      timestamp: new Date().toISOString(),
+      type: 'dry-run',
+      elements: [],
+      errors: [],
+      warnings: [],
+      success: false,
+      duration: 0
+    };
+
+    try {
+      const text = this.deckElements?.value || '';
+      const elements = text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      testLog.elements = elements;
+      console.log(`📦 Elementi nel deck: ${elements.length}`);
+
+      const validationErrors = this.validateExtractionDeck(elements);
+      testLog.errors = validationErrors;
+
+      if (validationErrors.length > 0) {
+        console.error('❌ Errori di validazione:', validationErrors);
+        this.testState = 'error';
+        this.testResults = {
+          success: false,
+          message: `Test fallito: ${validationErrors.length} errori trovati`,
+          errors: validationErrors,
+          elementCount: elements.length,
+          duration: performance.now() - startTime
+        };
+        this.showTestResults();
+        this.logTest(testLog);
+        return;
+      }
+
+      const extractionResults = this.simulateExtractions(elements, 5);
+      console.log('🎲 Simulazione estrazioni:', extractionResults);
+
+      const distributionCheck = this.checkDistribution(extractionResults, elements.length);
+      if (!distributionCheck.isValid) {
+        testLog.warnings.push('Distribuzione casuale non uniforme');
+        console.warn('⚠️ ' + testLog.warnings[0]);
+      }
+
+      this.testState = distributionCheck.isValid ? 'success' : 'warning';
+      testLog.success = true;
+      testLog.duration = performance.now() - startTime;
+
+      this.testResults = {
+        success: true,
+        message: `✅ Test superato! ${elements.length} elementi configurati correttamente`,
+        elementCount: elements.length,
+        sampleExtractions: extractionResults,
+        distribution: distributionCheck,
+        duration: testLog.duration,
+        warnings: testLog.warnings
+      };
+
+      console.log('✅ Test completato con successo');
+      console.log('📊 Risultati:', this.testResults);
+    } catch (error) {
+      console.error('❌ Errore durante il test:', error);
+      this.testState = 'error';
+      testLog.errors.push(`Errore interno: ${error.message}`);
+      testLog.duration = performance.now() - startTime;
+
+      this.testResults = {
+        success: false,
+        message: `Test fallito: ${error.message}`,
+        errors: [error.message],
+        duration: testLog.duration
+      };
+    } finally {
+      console.timeEnd('⏱️ Dry-Run Test');
+      this.logTest(testLog);
+      this.updateTestStateUI();
+      this.showTestResults();
+    }
+  }
+
+  simulateExtractions(elements, count = 5) {
+    const results = [];
+    for (let i = 0; i < Math.min(count, elements.length); i++) {
+      const randomIndex = Math.floor(Math.random() * elements.length);
+      results.push({ index: randomIndex + 1, value: elements[randomIndex] });
+    }
+    return results;
+  }
+
+  checkDistribution(extractions, totalElements) {
+    const uniqueIndices = new Set(extractions.map(e => e.index));
+    const uniqueRatio = uniqueIndices.size / (extractions.length || 1);
+    return {
+      isValid: uniqueRatio > 0.6,
+      uniqueRatio,
+      message: uniqueRatio > 0.6 ? 'Distribuzione casuale accettabile' : 'Troppe ripetizioni nella simulazione'
+    };
+  }
+
+  // ========== FASE 3 - Step 2: Testing Avanzato & Log Diagnostici ==========
+
+  async runMultipleTests() {
+    console.log('🧪 [FASE 3] Avvio Test Multipli');
+    console.time('⏱️ Test Multipli');
+
+    this.testState = 'testing';
+    this.updateTestStateUI();
+
+    const NUM_TESTS = 10;
+    const startTime = performance.now();
+    const testLog = {
+      timestamp: new Date().toISOString(),
+      type: 'multiple-runs',
+      numTests: NUM_TESTS,
+      results: [],
+      aggregated: {},
+      duration: 0,
+      success: false
+    };
+
+    try {
+      const text = this.deckElements?.value || '';
+      const elements = text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      if (elements.length === 0) {
+        throw new Error('Mazzo vuoto');
+      }
+
+      console.log(`🔄 Esecuzione di ${NUM_TESTS} test...`);
+
+      const allExtractions = [];
+      for (let i = 0; i < NUM_TESTS; i++) {
+        const runStart = performance.now();
+        const extractions = this.simulateExtractions(elements, Math.min(5, elements.length));
+        const runDuration = performance.now() - runStart;
+
+        testLog.results.push({ run: i + 1, extractions, duration: runDuration });
+        allExtractions.push(...extractions);
+        console.log(`  ✓ Test ${i + 1}/${NUM_TESTS} completato in ${runDuration.toFixed(2)}ms`);
+      }
+
+      const analysis = this.analyzeMultipleExtractions(allExtractions, elements);
+      testLog.aggregated = analysis;
+      testLog.duration = performance.now() - startTime;
+      testLog.success = true;
+
+      console.log('📊 Analisi aggregata:', analysis);
+
+      this.testState = analysis.qualityScore > 0.7 ? 'success' : 'warning';
+      this.testResults = {
+        success: true,
+        message: `✅ ${NUM_TESTS} test completati`,
+        elementCount: elements.length,
+        numTests: NUM_TESTS,
+        analysis,
+        duration: testLog.duration
+      };
+
+      console.log('✅ Test multipli completati');
+    } catch (error) {
+      console.error('❌ Errore durante i test multipli:', error);
+      this.testState = 'error';
+      testLog.duration = performance.now() - startTime;
+
+      this.testResults = {
+        success: false,
+        message: `Test falliti: ${error.message}`,
+        errors: [error.message],
+        duration: testLog.duration
+      };
+    } finally {
+      console.timeEnd('⏱️ Test Multipli');
+      this.logTest(testLog);
+      this.updateTestStateUI();
+      this.showTestResults();
+    }
+  }
+
+  analyzeMultipleExtractions(allExtractions, elements) {
+    const frequencies = new Map();
+    allExtractions.forEach(e => {
+      const count = frequencies.get(e.value) || 0;
+      frequencies.set(e.value, count + 1);
+    });
+
+    const avgFreq = allExtractions.length / (frequencies.size || 1);
+    const maxFreq = Math.max(...frequencies.values());
+    const minFreq = Math.min(...frequencies.values());
+
+    const uniqueRatio = frequencies.size / Math.min(elements.length, allExtractions.length || 1);
+    const distributionScore = 1 - ((maxFreq - avgFreq) / (avgFreq || 1));
+    const qualityScore = (uniqueRatio + distributionScore) / 2;
+
+    return {
+      totalExtractions: allExtractions.length,
+      uniqueElements: frequencies.size,
+      uniqueRatio,
+      avgFrequency: Number.isFinite(avgFreq) ? avgFreq.toFixed(2) : '0.00',
+      maxFrequency: Number.isFinite(maxFreq) ? maxFreq : 0,
+      minFrequency: Number.isFinite(minFreq) ? minFreq : 0,
+      distributionScore: Number.isFinite(distributionScore) ? distributionScore.toFixed(2) : '0.00',
+      qualityScore: Number.isFinite(qualityScore) ? qualityScore.toFixed(2) : '0.00',
+      message: qualityScore > 0.8 ? 'Eccellente' : qualityScore > 0.6 ? 'Buona' : 'Da migliorare',
+      topElements: Array.from(frequencies.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([value, count]) => ({ value, count }))
+    };
+  }
+
+  // ========== LOG DIAGNOSTICI ==========
+
+  logTest(testLog) {
+    this.testLogs.unshift(testLog);
+    if (this.testLogs.length > 50) {
+      this.testLogs = this.testLogs.slice(0, 50);
+    }
+    console.group(`📋 Log Test ${testLog.type}`);
+    console.log('🕐 Timestamp:', testLog.timestamp);
+    console.log('⏱️ Durata:', `${(testLog.duration ?? 0).toFixed(2)}ms`);
+    if (testLog.elements) console.log('📦 Elementi:', testLog.elements.length);
+    if (testLog.errors && testLog.errors.length > 0) console.error('❌ Errori:', testLog.errors);
+    if (testLog.warnings && testLog.warnings.length > 0) console.warn('⚠️ Warning:', testLog.warnings);
+    if (testLog.aggregated) console.log('📊 Analisi:', testLog.aggregated);
+    console.groupEnd();
+    this.updateTestLogsUI();
+  }
+
+  updateTestLogsUI() {
+    if (!this.testLogsContainer) return;
+    const recentLogs = this.testLogs.slice(0, 10);
+    if (recentLogs.length === 0) {
+      this.testLogsContainer.innerHTML = '<p class="no-logs">Nessun log di test disponibile</p>';
+      return;
+    }
+    this.testLogsContainer.innerHTML = recentLogs.map(log => {
+      const time = new Date(log.timestamp).toLocaleTimeString('it-IT');
+      const typeIcon = log.type === 'dry-run' ? '🧪' : '🔄';
+      const statusIcon = log.success ? '✅' : '❌';
+      const duration = log.duration ? `${log.duration.toFixed(0)}ms` : 'N/A';
+      return `
+        <div class="test-log-entry">
+          <span class="log-time">${time}</span>
+          <span class="log-type">${typeIcon} ${log.type}</span>
+          <span class="log-status">${statusIcon}</span>
+          <span class="log-duration">⏱️ ${duration}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ========== UI FEEDBACK ==========
+
+  updateTestStateUI() {
+    if (!this.testStateIndicator) return;
+    const states = {
+      idle: { icon: '⚪', text: 'Nessun test eseguito', className: 'test-state-idle' },
+      testing: { icon: '🔄', text: 'Test in corso...', className: 'test-state-testing' },
+      success: { icon: '🟢', text: 'Test superato', className: 'test-state-success' },
+      warning: { icon: '🟠', text: 'Test con warning', className: 'test-state-warning' },
+      error: { icon: '🔴', text: 'Test fallito', className: 'test-state-error' }
+    };
+    const state = states[this.testState] || states.idle;
+    this.testStateIndicator.innerHTML = `
+      <span class="${state.className}">
+        ${state.icon} ${state.text}
+      </span>
+    `;
+  }
+
+  showTestResults() {
+    if (!this.testResultsContainer || !this.testResults) return;
+
+    const { success, message, elementCount, errors, warnings, sampleExtractions, distribution, analysis, duration, numTests } = this.testResults;
+
+    let html = `
+      <div class="test-results-card ${success ? 'success' : 'error'}">
+        <h4>${message}</h4>
+        <div class="test-stats">
+    `;
+
+    if (elementCount !== undefined) {
+      html += `<p>📦 <strong>Elementi nel mazzo:</strong> ${elementCount}</p>`;
+    }
+    if (duration !== undefined) {
+      html += `<p>⏱️ <strong>Durata:</strong> ${Number(duration).toFixed(2)}ms</p>`;
+    }
+    if (errors && errors.length > 0) {
+      html += `
+        <div class="test-errors">
+          <h5>❌ Errori (${errors.length})</h5>
+          <ul>
+            ${errors.slice(0, 5).map(e => `<li>${e}</li>`).join('')}
+            ${errors.length > 5 ? `<li><em>... e altri ${errors.length - 5} errori</em></li>` : ''}
+          </ul>
+        </div>
+      `;
+    }
+    if (warnings && warnings.length > 0) {
+      html += `
+        <div class="test-warnings">
+          <h5>⚠️ Warning</h5>
+          <ul>
+            ${warnings.map(w => `<li>${w}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+    if (sampleExtractions && sampleExtractions.length > 0) {
+      html += `
+        <div class="test-extractions">
+          <h5>🎲 Estrazioni di prova</h5>
+          <div class="extraction-samples">
+            ${sampleExtractions.map(e => `<span class="extraction-badge">#${e.index}: ${this.escapeHtml(e.value)}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+    if (distribution) {
+      html += `
+        <div class="test-distribution">
+          <h5>📊 Distribuzione</h5>
+          <p><strong>Valori unici:</strong> ${(Number(distribution.uniqueRatio) * 100).toFixed(0)}%</p>
+          <p><strong>Qualità:</strong> ${distribution.message}</p>
+        </div>
+      `;
+    }
+    if (analysis && numTests) {
+      html += `
+        <div class="test-analysis">
+          <h5>📈 Analisi su ${numTests} test</h5>
+          <p><strong>Elementi unici estratti:</strong> ${analysis.uniqueElements}</p>
+          <p><strong>Frequenza media:</strong> ${analysis.avgFrequency}</p>
+          <p><strong>Score qualità:</strong> ${(Number(analysis.qualityScore) * 100).toFixed(0)}% (${analysis.message})</p>
+          ${analysis.topElements && analysis.topElements.length > 0 ? `
+            <div class="top-elements">
+              <h6>Top 5 elementi estratti:</h6>
+              ${analysis.topElements.map(e => `
+                <div class="top-element">
+                  <span>${this.escapeHtml(e.value)}</span>
+                  <span class="count-badge">×${e.count}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    this.testResultsContainer.innerHTML = html;
+    this.testResultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ========== OVERRIDE METODO ESISTENTE ==========
+  testExtraction() { this.runDryRunTest(); }
+
 
   /* ---------- Extraction System ---------- */
 

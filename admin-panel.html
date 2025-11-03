@@ -10,8 +10,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Uncial+Antiqua&family=Norse+Bold&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v2.8">
-    <link rel="stylesheet" href="admin-style.css?v2.8">
+    <link rel="stylesheet" href="style.css?v2.9">
+    <link rel="stylesheet" href="admin-style.css?v2.9">
 </head>
 
 <body>
@@ -25,6 +25,7 @@
         </header>
 
         <main class="admin-content">
+            <!-- Impostazioni Tiradadi -->
             <section class="admin-section">
                 <h2>🎲 Impostazioni Tiradadi</h2>
                 <p class="section-description">Controlla la visibilità del tiradadi nella schermata di gioco</p>
@@ -37,10 +38,17 @@
                 </div>
             </section>
 
+            <!-- Sistema Estrazione con FASE 3 -->
             <section class="admin-section">
                 <h2>🎴 Sistema Estrazione</h2>
                 <p class="section-description">Configura il sistema di estrazione casuale senza reinserimento (tipo mazzo di carte)</p>
 
+                <!-- FASE 3: Indicatore Stato Test -->
+                <div id="testStateIndicator" class="test-state-indicator">
+                    <span class="test-state-idle">⚪ Nessun test eseguito</span>
+                </div>
+
+                <!-- Visibilità Sistema -->
                 <div class="visibility-control">
                     <label class="visibility-toggle">
                         <input type="checkbox" id="extractionSystemVisible">
@@ -48,6 +56,7 @@
                     </label>
                 </div>
 
+                <!-- Configurazione Mazzo -->
                 <div class="extraction-config">
                     <h3>Configurazione Mazzo</h3>
                     <p class="section-description">Definisci gli elementi del mazzo. Ogni elemento verrà estratto una sola volta fino al reset.</p>
@@ -58,6 +67,7 @@
                         <small>Esempio: numeri, carte, nomi, simboli, etc. Inserisci un elemento per riga.</small>
                     </div>
 
+                    <!-- Anteprima con validazione -->
                     <div class="deck-preview">
                         <h4>Anteprima Mazzo</h4>
                         <div id="deckPreview" class="preview-items">
@@ -69,15 +79,29 @@
                     </div>
                 </div>
 
+                <!-- FASE 3: Pulsanti Test -->
                 <div class="action-buttons">
+                    <button id="testExtraction" class="btn-test">🧪 Test Configurazione</button>
+                    <button id="runMultipleTests" class="btn-test">🔄 Test Multipli (10x)</button>
                     <button id="saveExtractionConfig" class="btn-save">💾 Salva Configurazione</button>
-                    <button id="testExtraction" class="btn-preview">🎴 Test Estrazione</button>
                 </div>
 
+                <!-- FASE 3: Risultati Test -->
+                <div id="testResults" class="test-results-container"></div>
+
+                <!-- FASE 3: Log Diagnostici -->
+                <details class="test-logs-details">
+                    <summary><strong>📋 Log Diagnostici</strong> (ultimi 10 test)</summary>
+                    <div id="testLogs" class="test-logs-container">
+                        <p class="no-logs">Nessun log di test disponibile</p>
+                    </div>
+                </details>
+
+                <!-- Status feedback -->
                 <div id="extractionSaveStatus" class="save-status"></div>
             </section>
 
-
+            <!-- Gestione Preset -->
             <section class="admin-section">
                 <h2>⚡ Gestione Preset</h2>
                 <p class="section-description">Crea preset di lancio rapido. I preset escludono automaticamente le
@@ -86,9 +110,12 @@
                 <div class="presets-list">
                     <div class="presets-header">
                         <h3>📋 Preset Configurati</h3>
-                        <div class="header-controls"><select id="presetTagFilter" class="group-filter">
+                        <div class="header-controls">
+                            <select id="presetTagFilter" class="group-filter">
                                 <option value="all">Tutti i Tag</option>
-                            </select><button id="addPreset" class="btn-add">➕ Aggiungi Preset</button></div>
+                            </select>
+                            <button id="addPreset" class="btn-add">➕ Aggiungi Preset</button>
+                        </div>
                     </div>
                     <div id="presetsList" class="presets-container">
                         <!-- I preset saranno caricati dinamicamente -->
@@ -102,7 +129,7 @@
                 <div id="presetSaveStatus" class="save-status"></div>
             </section>
 
-
+            <!-- Configurazione Effetti Speciali -->
             <section class="admin-section">
                 <h2>🎯 Configurazione Effetti Speciali</h2>
                 <p class="section-description">Configura manualmente le combinazioni di dadi e risultati che attivano
@@ -131,12 +158,13 @@
                 <div id="saveStatus" class="save-status"></div>
             </section>
 
+            <!-- Anteprima Effetti -->
             <section class="admin-section">
                 <h2>🎨 Anteprima Effetti</h2>
                 <p class="section-description">Testa tutti gli effetti grafici e le varianti disponibili</p>
 
                 <div class="preview-grid">
-                    <!-- Anteprima effetti grafici -->
+                    <!-- Particelle e Fumo -->
                     <div class="preview-card">
                         <h3>✨ Particelle e Fumo</h3>
                         <div class="preview-buttons">
@@ -153,6 +181,7 @@
                         </div>
                     </div>
 
+                    <!-- Bagliori -->
                     <div class="preview-card">
                         <h3>💫 Bagliori</h3>
                         <div class="preview-buttons">
@@ -162,12 +191,12 @@
                             <button class="btn-preview-effect" data-effect="glow-purple">💜 Viola</button>
                             <button class="btn-preview-effect" data-effect="glow-rainbow">🌈 Arcobaleno</button>
                             <button class="btn-preview-effect" data-effect="glow-red">🔴 Rosso</button>
-                            <button class="btn-preview-effect" data-effect="glow-red-pulse">❤️‍🔥 Rosso
-                                Pulsante</button>
+                            <button class="btn-preview-effect" data-effect="glow-red-pulse">❤️‍🔥 Rosso Pulsante</button>
                             <button class="btn-preview-effect" data-effect="glow-intense">💥 Intenso</button>
                         </div>
                     </div>
 
+                    <!-- Movimenti -->
                     <div class="preview-card">
                         <h3>🎪 Movimenti</h3>
                         <div class="preview-buttons">
@@ -183,7 +212,7 @@
                         </div>
                     </div>
 
-                    <!-- Area di test -->
+                    <!-- Area Test -->
                     <div class="preview-card">
                         <h3>🎯 Area Test</h3>
                         <div id="testArea" class="test-area">
@@ -199,14 +228,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v2.8"></script>
-    <script src="constants.js?v2.8"></script>
-    <script src="validation.js?v2.8"></script>
-    <script src="launch-types-registry.js?v2.8"></script>
-    <script src="color-types-registry.js?v2.8"></script>
-    <script src="particle-pool.js?v2.8"></script>
-    <script src="effects-engine.js?v2.8"></script>
-    <script src="admin-panel.js?v2.8"></script>
+    <script src="firebase-config.js?v2.9"></script>
+    <script src="constants.js?v2.9"></script>
+    <script src="validation.js?v2.9"></script>
+    <script src="launch-types-registry.js?v2.9"></script>
+    <script src="color-types-registry.js?v2.9"></script>
+    <script src="particle-pool.js?v2.9"></script>
+    <script src="effects-engine.js?v2.9"></script>
+    <script src="admin-panel.js?v2.9"></script>
 
 </body>
 
