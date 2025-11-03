@@ -116,6 +116,9 @@ class AdminPanel {
     this.testResults = null;
     this.testState = 'idle'; // idle | testing | success | warning | error
     this.testLogs = [];
+    // Sistema estrazione
+    this.extractionSystemVisible = false;
+    this.extractionDeck = [];
 
 
     this._injectAntiClippingCSS();
@@ -130,6 +133,7 @@ class AdminPanel {
     this._isInitializing = true;
     await this.loadConfiguration();
     await this.loadPresets();
+    await this.loadExtractionConfiguration();
     this._isInitializing = false;
 
     this.renderRules();
@@ -314,19 +318,29 @@ class AdminPanel {
         this.diceRollerVisible = e.target.checked;
         this.showStatus(this.diceRollerVisible ? '✅ Tiradadi visibile' : '🔒 Tiradadi nascosto', 'success');
         await this.saveDiceRollerVisibility();
-      
+      });
+    }
+
+    // Eventi sistema estrazione
+    if (this.extractionSystemVisibleCheckbox) {
+      this.extractionSystemVisibleCheckbox.addEventListener('change', (e) => {
+        this.extractionSystemVisible = e.target.checked;
+      });
+    }
+
     // FASE 3: Eventi di test
     this.testExtractionButton?.addEventListener('click', () => this.runDryRunTest());
     this.runMultipleTestsButton?.addEventListener('click', () => this.runMultipleTests());
+
+    // Pulsante salva configurazione estrazione
+    const saveExtractionConfigButton = document.getElementById('saveExtractionConfig');
+    saveExtractionConfigButton?.addEventListener('click', () => this.saveExtractionConfiguration());
 
     // Validazione live durante la digitazione
     this.deckElements?.addEventListener('input', () => {
       this.updateExtractionPreview();
       this.validateInputLive();
     });
-
-  });
-    }
 
     this.groupFilter?.addEventListener('change', () => this.renderRules());
 
