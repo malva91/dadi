@@ -1471,6 +1471,159 @@ class AdminPanel {
       await this.savePresetToFirestore(preset);
     }
   }
+
+  /* ---------- Extraction System ---------- */
+
+  async loadExtractionConfiguration() {
+    try {
+      const configDoc = await this.firestore.collection('effectsConfig').doc('config').get();
+      const configData = configDoc.exists ? configDoc.data() : {};
+
+      this.extractionSystemVisible = configData.extractionSystemVisible || false;
+      this.extractionDeck = configData.extractionDeck || ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+
+      this.updateExtractionUI();
+      this.updateExtractionPreview();
+    } catch (error) {
+      console.error('Errore nel caricamento configurazione sistema estrazione:', error);
+      this.showExtractionStatus('Errore nel caricamento della configurazione', 'error');
+      this.extractionSystemVisible = false;
+      this.extractionDeck = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+      this.updateExtractionUI();
+      this.updateExtractionPreview();
+    }
+  }
+
+  updateExtractionUI() {
+    if (this.extractionSystemVisibleCheckbox) {
+      this.extractionSystemVisibleCheckbox.checked = this.extractionSystemVisible;
+    }
+
+    if (this.deckElements && Array.isArray(this.extractionDeck)) {
+      this.deckElements.value = this.extractionDeck.join('\n');
+    }
+  }
+
+  updateExtractionPreview() {
+    if (!this.deckElements || !this.deckPreview || !this.deckCount) return;
+
+    const text = this.deckElements.value || '';
+    const elements = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    if (elements.length === 0) {
+      this.deckPreview.innerHTML = '<span class="preview-placeholder">Inserisci elementi per vedere l\'anteprima</span>';
+      this.deckCount.textContent = '0';
+      return;
+    }
+
+    this.deckCount.textContent = elements.length;
+
+    this.deckPreview.innerHTML = elements
+      .map(element => `<span class="preview-item">${this.escapeHtml(element)}</span>`)
+      .join('');
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  validateExtractionDeck(elements) {
+    const errors = [];
+
+    if (!Array.isArray(elements) || elements.length === 0) {
+      errors.push('Il mazzo deve contenere almeno un elemento');
+      return errors;
+    }
+
+    if (elements.length > 1000) {
+      errors.push('Il mazzo non può contenere più di 1000 elementi');
+      return errors;
+    }
+
+    const seen = new Set();
+    elements.forEach((element, index) => {
+      if (!element || typeof element !== 'string' || element.trim().length === 0) {
+        errors.push(`Riga ${index + 1}: Elemento vuoto`);
+      } else if (element.length > 200) {
+        errors.push(`Riga ${index + 1}: Elemento troppo lungo (max 200 caratteri)`);
+      } else if (seen.has(element.toLowerCase())) {
+        errors.push(`Riga ${index + 1}: Elemento duplicato`);
+      } else {
+        seen.add(element.toLowerCase());
+      }
+    });
+
+    return errors;
+  }
+
+  async saveExtractionConfiguration() {
+    try {
+      const text = this.deckElements?.value || '';
+      const elements = text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      const validationErrors = this.validateExtractionDeck(elements);
+      if (validationErrors.length > 0) {
+        const message = validationErrors.slice(0, 3).join('\n') +
+                       (validationErrors.length > 3 ? `\n... e altri ${validationErrors.length - 3} errori` : '');
+        this.showExtractionStatus(`Errori di validazione:\n${message}`, 'error');
+        return;
+      }
+
+      const configRef = this.firestore.collection('effectsConfig').doc('config');
+      const currentConfig = (await configRef.get()).data() || {};
+
+      await configRef.set({
+        ...currentConfig,
+        extractionSystemVisible: this.extractionSystemVisible,
+        extractionDeck: elements
+      });
+
+      this.extractionDeck = elements;
+      this.showExtractionStatus(`✅ Configurazione salvata (${elements.length} elementi)`, 'success');
+
+      if (window.extractionSystem) {
+        try {
+          await window.extractionSystem.setDefaultDeck(elements);
+        } catch (error) {
+          console.warn('Errore sincronizzazione extraction-system:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio configurazione estrazione:', error);
+      this.showExtractionStatus('Errore nel salvataggio della configurazione', 'error');
+    }
+  }
+
+  testExtraction() {
+    if (!this.extractionDeck || this.extractionDeck.length === 0) {
+      this.showExtractionStatus('Mazzo vuoto. Aggiungi elementi prima di testare', 'warning');
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * this.extractionDeck.length);
+    const extracted = this.extractionDeck[randomIndex];
+
+    const message = `Estratto: "${extracted}" (${randomIndex + 1}/${this.extractionDeck.length})`;
+    this.showExtractionStatus(message, 'success');
+  }
+
+  showExtractionStatus(message, type) {
+    if (!this.extractionSaveStatus) return;
+    this.extractionSaveStatus.textContent = message;
+    this.extractionSaveStatus.className = `save-status ${type}`;
+    setTimeout(() => {
+      this.extractionSaveStatus.className = 'save-status';
+      this.extractionSaveStatus.textContent = '';
+    }, 5000);
+  }
 }
 
 /* ===========================
