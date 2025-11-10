@@ -123,7 +123,7 @@ class UIRenderer {
         }
     }
 
-    flushDiceResults() {
+    async flushDiceResults() {
         this.diceRenderScheduled = false;
 
         if (this.pendingDiceResults.length === 0) return;
@@ -133,10 +133,10 @@ class UIRenderer {
 
         batch.sort((a, b) => a.timestamp - b.timestamp);
 
-        batch.forEach(({ result, diceResults, customDiceTypes }) => {
-            const resultDiv = this.createDiceResultElement(result, diceResults, customDiceTypes);
+        for (const { result, diceResults, customDiceTypes } of batch) {
+            const resultDiv = await this.createDiceResultElement(result, diceResults, customDiceTypes);
             fragment.appendChild(resultDiv);
-        });
+        }
 
         if (batch.length > 0) {
             const diceResults = batch[0].diceResults;
@@ -168,7 +168,7 @@ class UIRenderer {
         this.scheduleDiceResultRender(result, diceResults, customDiceTypes);
     }
 
-    createDiceResultElement(result, diceResults, customDiceTypes) {
+    async createDiceResultElement(result, diceResults, customDiceTypes) {
         if (!result || !result.results) {
             console.warn('createDiceResultElement: result non valido');
             return document.createElement('div');
@@ -183,8 +183,11 @@ class UIRenderer {
         content += `<div class="dice-details">`;
 
         const triggeredEffects = [];
-        const allEffects = (this.effectsEngine && Array.isArray(result.results)) ?
-            this.effectsEngine.checkForEffects(result.results, result.presetRules) : null;
+        let allEffects = null;
+        if (this.effectsEngine && Array.isArray(result.results)) {
+            await this.effectsEngine.ensureConfigLoaded();
+            allEffects = this.effectsEngine.checkForEffects(result.results, result.presetRules);
+        }
 
         const diceEffectsMap = new Map();
         if (allEffects && Array.isArray(allEffects) && allEffects.length > 0) {
